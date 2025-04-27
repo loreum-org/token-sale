@@ -1,0 +1,7 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+test = "test/invariant"  # Only look for tests in the invariant directory
+fuzz = { runs = 256 }    # Number of fuzz runs for invariant tests
+invariant = { runs = 256, depth = 500 }  # Number of runs and call depth for invariant tests 
