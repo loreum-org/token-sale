@@ -40,7 +40,7 @@ export default function BondingCurvePage() {
   
   return (
     <ErrorBoundary>
-      <div className="container mx-auto py-8 bg-gray-950 text-gray-100 min-h-screen px-4">
+      <div className="container mx-auto py-8 px-4">
         {/* Header with Logo and Wallet Connect */}
         <div className="flex items-center justify-between mb-6">
           <Image 
@@ -134,7 +134,7 @@ export default function BondingCurvePage() {
                   </div>
                   
                   <div className="mt-3 text-sm text-blue-300">
-                    This curve creates increasing price pressure as more tokens are purchased, rewarding early participants.
+                    This curve creates increasing price pressure as more tokens are purchased, rewarding early participants. ETH deposited is locked in the contract and cannot be withdrawn unless retuned from a Sell.
                   </div>
                 </div>
               </div>

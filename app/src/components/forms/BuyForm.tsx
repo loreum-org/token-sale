@@ -105,13 +105,13 @@ const BuyForm = ({ currentPrice, onTransactionComplete }: BuyFormProps) => {
     !isConnected;
 
   return (
-    <div className="bg-white shadow rounded-lg p-6">
-      <h2 className="text-lg font-medium text-gray-900 mb-4">Buy LORE Tokens</h2>
+    <div className="bg-gray-900/70 border border-gray-800 shadow rounded-lg p-6">
+      <h2 className="text-lg font-medium text-purple-400 mb-4">Buy LORE Tokens</h2>
       
       <div className="space-y-4">
         {/* ETH Input */}
         <div>
-          <label htmlFor="ethAmount" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="ethAmount" className="block text-sm font-medium text-gray-300">
             ETH Amount
           </label>
           <div className="mt-1 relative rounded-md shadow-sm">
@@ -119,21 +119,21 @@ const BuyForm = ({ currentPrice, onTransactionComplete }: BuyFormProps) => {
               type="text"
               name="ethAmount"
               id="ethAmount"
-              className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-3 pr-12 sm:text-sm border-gray-300 rounded-md"
+              className="bg-gray-800/50 border-gray-700 focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-3 pr-12 sm:text-sm rounded-md text-white"
               placeholder="0.0"
               value={ethAmount}
               onChange={handleEthAmountChange}
               disabled={transactionPending}
             />
             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <span className="text-gray-500 sm:text-sm">ETH</span>
+              <span className="text-gray-400 sm:text-sm">ETH</span>
             </div>
           </div>
         </div>
         
         {/* Token Output */}
         <div>
-          <label htmlFor="tokenAmount" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="tokenAmount" className="block text-sm font-medium text-gray-300">
             You Will Receive
           </label>
           <div className="mt-1 relative rounded-md shadow-sm">
@@ -141,27 +141,27 @@ const BuyForm = ({ currentPrice, onTransactionComplete }: BuyFormProps) => {
               type="text"
               name="tokenAmount"
               id="tokenAmount"
-              className="bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-3 pr-12 sm:text-sm border-gray-300 rounded-md"
+              className="bg-gray-800/50 border-gray-700 focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-3 pr-12 sm:text-sm rounded-md text-white"
               placeholder="0.0"
               value={buyAmount !== '0' ? formatNumber(buyAmount, 6) : ''}
               readOnly
             />
             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <span className="text-gray-500 sm:text-sm">LORE</span>
+              <span className="text-gray-400 sm:text-sm">LORE</span>
             </div>
           </div>
           {buyLoading && (
-            <p className="mt-1 text-xs text-gray-500">Calculating...</p>
+            <p className="mt-1 text-xs text-gray-400">Calculating...</p>
           )}
         </div>
         
         {/* Price Impact */}
         {priceImpact > 0 && (
           <div className="text-sm">
-            <span className="text-gray-500">Price Impact:</span>{' '}
+            <span className="text-gray-400">Price Impact:</span>{' '}
             <span className={`font-medium ${
-              priceImpact < 0.01 ? 'text-green-600' : 
-              priceImpact < 0.05 ? 'text-yellow-600' : 'text-red-600'
+              priceImpact < 0.01 ? 'text-green-400' : 
+              priceImpact < 0.05 ? 'text-yellow-400' : 'text-red-400'
             }`}>
               {(priceImpact * 100).toFixed(2)}%
             </span>
@@ -170,7 +170,7 @@ const BuyForm = ({ currentPrice, onTransactionComplete }: BuyFormProps) => {
         
         {/* Slippage Settings */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-300 mb-1">
             Slippage Tolerance
           </label>
           <div className="flex space-x-2">
@@ -180,8 +180,8 @@ const BuyForm = ({ currentPrice, onTransactionComplete }: BuyFormProps) => {
                 type="button"
                 className={`px-3 py-1 text-sm rounded-md ${
                   slippage === value
-                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-300'
-                    : 'bg-gray-100 text-gray-800 border border-transparent hover:bg-gray-200'
+                    ? 'bg-indigo-800 text-indigo-200 border border-indigo-600'
+                    : 'bg-gray-800 text-gray-300 border border-transparent hover:bg-gray-700'
                 }`}
                 onClick={() => handleSlippageChange(value)}
               >
@@ -193,7 +193,7 @@ const BuyForm = ({ currentPrice, onTransactionComplete }: BuyFormProps) => {
         
         {/* Error Message */}
         {(txError || buyError) && (
-          <div className="text-sm text-red-600">
+          <div className="text-sm text-red-400 bg-red-900/20 p-2 rounded-md">
             {txError || (buyError instanceof Error ? buyError.message : 'Error calculating buy amount')}
           </div>
         )}

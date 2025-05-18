@@ -16,7 +16,7 @@
     "@tailwindcss/forms": "^0.5.10",
     "@tanstack/query-core": "^5.76.0",
     "@tanstack/react-query": "^5.76.1",
-    "@web3-react/walletconnect-connector": "^6.2.13",
+    "@web3-react/walletconnect-connector": "^6.2.4",
     "better-sqlite3": "^11.10.0",
     "chart.js": "^4.4.9",
     "chartjs-plugin-annotation": "^3.1.0",

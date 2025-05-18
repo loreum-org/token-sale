@@ -12,6 +12,21 @@ interface TransactionHistoryProps {
 
 export function TransactionHistory({ transactions, isWalletConnected }: TransactionHistoryProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const transactionsPerPage = 7;
+  
+  const totalPages = Math.ceil(transactions.length / transactionsPerPage);
+  const startIndex = (currentPage - 1) * transactionsPerPage;
+  const endIndex = startIndex + transactionsPerPage;
+  const currentTransactions = transactions.slice(startIndex, endIndex);
+
+  const handlePrevPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  };
 
   // Simulate loading state briefly when transactions change
   useEffect(() => {
@@ -23,6 +38,11 @@ export function TransactionHistory({ transactions, isWalletConnected }: Transact
       return () => clearTimeout(timer);
     }
   }, [transactions.length, isWalletConnected]);
+
+  // Reset pagination when transactions change significantly
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [transactions.length]);
 
   return (
     <Card className="border border-gray-800 bg-gray-900/70 backdrop-blur-sm shadow-lg shadow-blue-500/5">
@@ -36,7 +56,7 @@ export function TransactionHistory({ transactions, isWalletConnected }: Transact
         <CardDescription className="text-gray-400 text-xs">
           {isWalletConnected 
             ? transactions.length > 0 
-              ? `Most recent ${Math.min(transactions.length, 5)} of ${transactions.length}`
+              ? `Showing ${startIndex + 1}-${Math.min(endIndex, transactions.length)} of ${transactions.length}`
               : "No transactions yet"
             : "Connect wallet to see transactions"}
         </CardDescription>
@@ -51,7 +71,7 @@ export function TransactionHistory({ transactions, isWalletConnected }: Transact
                 <div className="h-2 bg-gray-800 rounded"></div>
                 <div className="h-2 bg-gray-800 rounded"></div>
               </div>
-              {[1, 2, 3].map((i) => (
+              {[1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className="grid grid-cols-4 gap-2">
                   <div className="h-3 bg-gray-800 rounded"></div>
                   <div className="h-3 bg-gray-800 rounded"></div>
@@ -62,38 +82,71 @@ export function TransactionHistory({ transactions, isWalletConnected }: Transact
             </div>
           </div>
         ) : transactions.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-800/50">
-                <tr>
-                  <th className="text-left py-2 px-2 text-xs font-medium text-gray-400">Type</th>
-                  <th className="text-left py-2 px-2 text-xs font-medium text-gray-400">From</th>
-                  <th className="text-right py-2 px-2 text-xs font-medium text-gray-400">LORE</th>
-                  <th className="text-right py-2 px-2 text-xs font-medium text-gray-400">ETH</th>
-                </tr>
-              </thead>
-              <tbody>
-                {transactions.slice(0, 5).map((tx) => (
-                  <tr key={tx.id} className="border-t border-gray-800">
-                    <td className="py-2 px-2">
-                      <span
-                        className={`inline-flex items-center justify-center text-xs font-medium px-1.5 py-0.5 rounded-sm ${
-                          tx.isBuy ? "bg-green-900/20 text-green-400" : "bg-red-900/20 text-red-400"
-                        }`}
-                      >
-                        {tx.isBuy ? "Buy" : "Sell"}
-                      </span>
-                    </td>
-                    <td className="py-2 px-2 text-xs text-gray-300 font-mono">
-                      {truncateAddress(tx.userAddress)}
-                    </td>
-                    <td className="py-2 px-2 text-right font-mono text-xs text-gray-300">{formatNumber(tx.tokenAmount, 0)}</td>
-                    <td className="py-2 px-2 text-right font-mono text-xs text-gray-300">{formatEth(tx.ethAmount)}</td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-800/50">
+                  <tr>
+                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-400">Type</th>
+                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-400">From</th>
+                    <th className="text-right py-2 px-2 text-xs font-medium text-gray-400">LORE</th>
+                    <th className="text-right py-2 px-2 text-xs font-medium text-gray-400">ETH</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {currentTransactions.map((tx) => (
+                    <tr key={tx.id} className="border-t border-gray-800">
+                      <td className="py-2 px-2">
+                        <span
+                          className={`inline-flex items-center justify-center text-xs font-medium px-1.5 py-0.5 rounded-sm ${
+                            tx.isBuy ? "bg-green-900/20 text-green-400" : "bg-red-900/20 text-red-400"
+                          }`}
+                        >
+                          {tx.isBuy ? "Buy" : "Sell"}
+                        </span>
+                      </td>
+                      <td className="py-2 px-2 text-xs text-gray-300 font-mono">
+                        {tx.walletAddress ? truncateAddress(tx.walletAddress) : truncateAddress(tx.userAddress)}
+                      </td>
+                      <td className="py-2 px-2 text-right font-mono text-xs text-gray-300">{formatNumber(tx.tokenAmount, 0)}</td>
+                      <td className="py-2 px-2 text-right font-mono text-xs text-gray-300">{formatEth(tx.ethAmount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            {/* Pagination Controls */}
+            {transactions.length > transactionsPerPage && (
+              <div className="flex items-center justify-between p-2 border-t border-gray-800">
+                <button
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 1}
+                  className={`px-2 py-1 text-xs rounded-md ${
+                    currentPage === 1
+                      ? 'bg-gray-800/30 text-gray-500 cursor-not-allowed'
+                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  }`}
+                >
+                  Previous
+                </button>
+                <span className="text-xs text-gray-400">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages}
+                  className={`px-2 py-1 text-xs rounded-md ${
+                    currentPage === totalPages
+                      ? 'bg-gray-800/30 text-gray-500 cursor-not-allowed'
+                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  }`}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="py-4 text-center text-gray-400 text-xs">
             {isWalletConnected ? (
