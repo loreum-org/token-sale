@@ -12,14 +12,14 @@ const nextConfig = {
     // !! WARN !!
     ignoreBuildErrors: true,
   },
-  // Optimize build output
+  // Set output to standalone for Docker deployments
   output: 'standalone',
   // Enable production source maps for better debugging
   productionBrowserSourceMaps: true,
-  // Configure build optimizations
+  // Disable specific optimizations that might cause issues with native modules
   experimental: {
-    // Optimize for smaller build sizes
-    optimizeCss: true,
+    // Disable optimizeCss which uses lightningcss and can cause issues
+    optimizeCss: false,
     // Keep output tree minimized
     outputFileTracingRoot: process.cwd(),
   },
@@ -46,6 +46,13 @@ const nextConfig = {
         ],
       },
     ];
+  },
+  // Configure webpack to avoid issues with platform-specific modules
+  webpack: (config, { dev, isServer }) => {
+    // Handle platform-specific modules
+    config.externals = [...(config.externals || []), 'lightningcss', '@tailwindcss/oxide'];
+    
+    return config;
   },
 };
 

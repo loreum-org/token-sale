@@ -9,6 +9,7 @@
     "lint": "next lint",
     "rebuild-deps": "npm rebuild lightningcss --force && npm rebuild tailwindcss --force",
     "build:prod": "npm run rebuild-deps && ESLINT_DISABLE=true NEXT_IGNORE_ESLINT=1 next build",
+    "build:docker": "TAILWIND_OXIDE_TARGET=musl npm run rebuild-deps && ESLINT_DISABLE=true NEXT_IGNORE_ESLINT=1 next build",
     "setup": "npm install react@18.2.0 react-dom@18.2.0 --save --legacy-peer-deps && npm install @tanstack/react-query@latest @tanstack/query-core@latest --legacy-peer-deps && npm install --legacy-peer-deps",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
   },
