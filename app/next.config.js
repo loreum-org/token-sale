@@ -64,6 +64,14 @@ const nextConfig = {
       };
     }
     
+    // Add fallbacks for Node.js core modules
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      path: false,
+      os: false,
+    };
+    
     // Disable minification to avoid issues with native modules
     if (config.optimization && config.optimization.minimizer) {
       config.optimization.minimizer = [];

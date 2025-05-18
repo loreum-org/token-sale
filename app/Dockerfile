@@ -18,8 +18,9 @@ ENV ESLINT_DISABLE=true
 ENV SKIP_OXIZING=1
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 
-# Install dependencies
-RUN npm ci --no-audit --omit=dev --ignore-scripts && \
+# Install dependencies including autoprefixer
+RUN npm ci --no-audit && \
+    npm install -g postcss autoprefixer tailwindcss && \
     npm cache clean --force
 
 # Copy the rest of the application
