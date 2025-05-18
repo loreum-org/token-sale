@@ -1,150 +1,206 @@
-import { useState, useCallback } from 'react';
-import { ethers } from 'ethers';
-import { 
-  calculateBuyAmount, 
-  calculateSellAmount, 
-  buyTokens,
-  sellTokens
-} from '../services/tokenService';
+import { useState, useEffect, useCallback } from "react";
+import { bondingCurveApi } from "@/lib/api-client";
+import { CurveState, Transaction } from "@/types";
+import { useAccount } from "wagmi";
 
-interface UseBondingCurveReturn {
-  // Buy functionality
-  buyAmount: string;
-  buyLoading: boolean;
-  buyError: Error | null;
-  calculateBuy: (ethAmount: string) => Promise<void>;
-  executeBuy: (ethAmount: string, slippagePercentage: number) => Promise<ethers.TransactionResponse | null>;
+/**
+ * Custom hook for interacting with the bonding curve
+ */
+export function useBondingCurve() {
+  const [state, setState] = useState<CurveState | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [ethUsdPrice, setEthUsdPrice] = useState<number>(0);
   
-  // Sell functionality
-  sellAmount: string;
-  sellLoading: boolean;
-  sellError: Error | null;
-  calculateSell: (tokenAmount: string) => Promise<void>;
-  executeSell: (tokenAmount: string, slippagePercentage: number) => Promise<ethers.TransactionResponse | null>;
+  // Get wallet connection state
+  const { address, isConnected } = useAccount();
   
-  // Transaction state
-  transactionPending: boolean;
-  setTransactionPending: (pending: boolean) => void;
-}
-
-export const useBondingCurve = (): UseBondingCurveReturn => {
-  // Buy state
-  const [buyAmount, setBuyAmount] = useState<string>('0');
-  const [buyLoading, setBuyLoading] = useState<boolean>(false);
-  const [buyError, setBuyError] = useState<Error | null>(null);
-  
-  // Sell state
-  const [sellAmount, setSellAmount] = useState<string>('0');
-  const [sellLoading, setSellLoading] = useState<boolean>(false);
-  const [sellError, setSellError] = useState<Error | null>(null);
-  
-  // Transaction state
-  const [transactionPending, setTransactionPending] = useState<boolean>(false);
-
-  // Calculate token amount for a buy
-  const calculateBuy = useCallback(async (ethAmount: string) => {
-    if (!ethAmount || parseFloat(ethAmount) <= 0) {
-      setBuyAmount('0');
-      return;
-    }
-    
+  /**
+   * Fetch ETH price from API
+   */
+  const fetchEthPrice = useCallback(async () => {
     try {
-      setBuyLoading(true);
-      setBuyError(null);
-      
-      const amount = await calculateBuyAmount(ethAmount);
-      setBuyAmount(amount);
+      const response = await fetch('https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD');
+      const data = await response.json();
+      if (data && data.USD) {
+        setEthUsdPrice(data.USD);
+      } else {
+        // Fallback price
+        setEthUsdPrice(3000);
+      }
     } catch (err) {
-      console.error('Error calculating buy amount:', err);
-      setBuyError(err instanceof Error ? err : new Error('Failed to calculate buy amount'));
-      setBuyAmount('0');
-    } finally {
-      setBuyLoading(false);
+      console.error('Error fetching ETH price:', err);
+      setEthUsdPrice(3000);
     }
   }, []);
   
-  // Calculate ETH amount for a sell
-  const calculateSell = useCallback(async (tokenAmount: string) => {
-    if (!tokenAmount || parseFloat(tokenAmount) <= 0) {
-      setSellAmount('0');
-      return;
-    }
-    
+  /**
+   * Fetch bonding curve data (state and transactions)
+   */
+  const fetchData = useCallback(async () => {
     try {
-      setSellLoading(true);
-      setSellError(null);
+      // Only set loading to true on initial load, not on subsequent refreshes
+      if (!state) {
+        setLoading(true);
+      }
+      setError(null);
       
-      const amount = await calculateSellAmount(tokenAmount);
-      setSellAmount(amount);
+      // Use wallet address if connected
+      const walletAddress = isConnected && address ? address : undefined;
+      
+      // Fetch data in parallel
+      const [stateData, txData] = await Promise.all([
+        bondingCurveApi.getState(walletAddress),
+        bondingCurveApi.getTransactions(walletAddress)
+      ]);
+      
+      setState(stateData);
+      setTransactions(txData);
+      setLoading(false);
     } catch (err) {
-      console.error('Error calculating sell amount:', err);
-      setSellError(err instanceof Error ? err : new Error('Failed to calculate sell amount'));
-      setSellAmount('0');
-    } finally {
-      setSellLoading(false);
+      console.error('Error fetching bonding curve data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch data');
+      setLoading(false);
     }
-  }, []);
-
-  // Execute buy transaction
-  const executeBuy = useCallback(async (ethAmount: string, slippagePercentage: number = 0.5): Promise<ethers.TransactionResponse | null> => {
-    if (!ethAmount || parseFloat(ethAmount) <= 0) {
-      setBuyError(new Error('Invalid ETH amount'));
-      return null;
-    }
-    
+  }, [address, isConnected, state]);
+  
+  /**
+   * Buy tokens
+   * @param ethAmount Amount of ETH to spend
+   */
+  const buyTokens = useCallback(async (ethAmount: number) => {
     try {
-      setTransactionPending(true);
-      setBuyError(null);
+      if (!state) {
+        throw new Error('State not loaded');
+      }
       
-      const tx = await buyTokens(ethAmount, slippagePercentage);
-      return tx;
+      if (ethAmount <= 0) {
+        throw new Error('Please enter a valid ETH amount');
+      }
+      
+      if (ethAmount > state.ethBalance) {
+        throw new Error('Insufficient ETH balance');
+      }
+      
+      if (!isConnected) {
+        throw new Error('Please connect your wallet to trade');
+      }
+      
+      // Set loading for UI elements but don't block the whole app
+      setLoading(true);
+      setError(null);
+      
+      const result = await bondingCurveApi.buyTokens(ethAmount, address);
+      
+      // Update state with new values in the background
+      setState(prevState => ({
+        ...prevState!,
+        currentSupply: result.currentSupply,
+        currentPrice: result.currentPrice,
+        ethBalance: result.ethBalance,
+        tokenBalance: result.tokenBalance,
+        reserveBalance: result.reserveBalance,
+      }));
+      
+      // Refresh transaction list in the background
+      bondingCurveApi.getTransactions(address).then(transactions => {
+        setTransactions(transactions);
+      });
+      
+      setLoading(false);
+      return result;
     } catch (err) {
       console.error('Error buying tokens:', err);
-      setBuyError(err instanceof Error ? err : new Error('Failed to buy tokens'));
-      return null;
-    } finally {
-      setTransactionPending(false);
+      setError(err instanceof Error ? err.message : 'Failed to buy tokens');
+      setLoading(false);
+      throw err;
     }
-  }, []);
+  }, [state, address, isConnected]);
   
-  // Execute sell transaction
-  const executeSell = useCallback(async (tokenAmount: string, slippagePercentage: number = 0.5): Promise<ethers.TransactionResponse | null> => {
-    if (!tokenAmount || parseFloat(tokenAmount) <= 0) {
-      setSellError(new Error('Invalid token amount'));
-      return null;
-    }
-    
+  /**
+   * Sell tokens
+   * @param tokenAmount Amount of tokens to sell
+   */
+  const sellTokens = useCallback(async (tokenAmount: number) => {
     try {
-      setTransactionPending(true);
-      setSellError(null);
+      if (!state) {
+        throw new Error('State not loaded');
+      }
       
-      const tx = await sellTokens(tokenAmount, slippagePercentage);
-      return tx;
+      if (tokenAmount <= 0) {
+        throw new Error('Please enter a valid token amount');
+      }
+      
+      if (tokenAmount > state.tokenBalance) {
+        throw new Error('Insufficient token balance');
+      }
+      
+      if (!isConnected) {
+        throw new Error('Please connect your wallet to trade');
+      }
+      
+      // Set loading for UI elements but don't block the whole app
+      setLoading(true);
+      setError(null);
+      
+      const result = await bondingCurveApi.sellTokens(tokenAmount, address);
+      
+      // Update state with new values in the background
+      setState(prevState => ({
+        ...prevState!,
+        currentSupply: result.currentSupply,
+        currentPrice: result.currentPrice,
+        ethBalance: result.ethBalance,
+        tokenBalance: result.tokenBalance,
+        reserveBalance: result.reserveBalance,
+      }));
+      
+      // Refresh transaction list in the background
+      bondingCurveApi.getTransactions(address).then(transactions => {
+        setTransactions(transactions);
+      });
+      
+      setLoading(false);
+      return result;
     } catch (err) {
       console.error('Error selling tokens:', err);
-      setSellError(err instanceof Error ? err : new Error('Failed to sell tokens'));
-      return null;
-    } finally {
-      setTransactionPending(false);
+      setError(err instanceof Error ? err.message : 'Failed to sell tokens');
+      setLoading(false);
+      throw err;
     }
+  }, [state, address, isConnected]);
+  
+  // Set up periodic background refresh
+  useEffect(() => {
+    // Initial fetch
+    fetchEthPrice();
+    fetchData();
+    
+    // Set up background refresh every 30 seconds
+    const refreshInterval = setInterval(() => {
+      fetchEthPrice();
+      fetchData();
+    }, 30000);
+    
+    return () => clearInterval(refreshInterval);
+  }, [fetchEthPrice, fetchData]);
+  
+  // Calculate price for the chart
+  const calculatePrice = useCallback((supply: number, exponent: number, maxSupply: number, maxPrice: number): number => {
+    const normalizedSupply = supply / maxSupply;
+    return (normalizedSupply ** exponent) * maxPrice;
   }, []);
-
+  
   return {
-    buyAmount,
-    buyLoading,
-    buyError,
-    calculateBuy,
-    executeBuy,
-    
-    sellAmount,
-    sellLoading,
-    sellError,
-    calculateSell,
-    executeSell,
-    
-    transactionPending,
-    setTransactionPending
+    state,
+    transactions,
+    loading,
+    error,
+    ethUsdPrice,
+    buyTokens,
+    sellTokens,
+    fetchData,
+    calculatePrice,
   };
-};
-
-export default useBondingCurve;
+}

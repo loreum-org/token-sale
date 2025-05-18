@@ -3,11 +3,6 @@ import { getContractAddresses } from '../config/contractAddresses';
 import LoreTokenABI from '../config/abis/LoreToken.json';
 import BondingCurveABI from '../config/abis/BondingCurve.json';
 
-// Define a type for the ethereum provider with event handlers
-type EthereumProvider = ethers.Eip1193Provider & {
-  on(event: string, callback: any): void;
-  removeListener(event: string, callback: any): void;
-};
 
 let provider: ethers.BrowserProvider | null = null;
 let signer: ethers.Signer | null = null;
@@ -15,15 +10,135 @@ let loreTokenContract: ethers.Contract | null = null;
 let bondingCurveContract: ethers.Contract | null = null;
 let chainChangeCallbacks: ((chainId: string) => void)[] = [];
 let accountChangeCallbacks: ((accounts: string[]) => void)[] = [];
+// Track if we're using a mock provider
+let isMockProvider = false;
+
+// Mock provider implementation for simulation mode
+class MockProvider {
+  async send(method: string, params: any[]): Promise<any> {
+    switch (method) {
+      case 'eth_requestAccounts':
+        return ['0xMock0000000000000000000000000000000001'];
+      case 'eth_chainId':
+        return '0x1'; // Mainnet
+      case 'eth_getBalance':
+        return ethers.parseEther('10').toString();
+      default:
+        console.log(`Mock provider received method: ${method}`);
+        return null;
+    }
+  }
+
+  on(event: string, callback: any): void {
+    console.log(`Mock provider registered event: ${event}`);
+  }
+
+  removeListener(event: string, callback: any): void {
+    console.log(`Mock provider removed event: ${event}`);
+  }
+}
+
+// Mock signer implementation
+class MockSigner {
+  async getAddress(): Promise<string> {
+    return '0xMock0000000000000000000000000000000001';
+  }
+}
+
+// Mock token contract implementation
+class MockTokenContract {
+  async name(): Promise<string> {
+    return 'LORE Token';
+  }
+
+  async symbol(): Promise<string> {
+    return 'LORE';
+  }
+
+  async decimals(): Promise<number> {
+    return 18;
+  }
+
+  async totalSupply(): Promise<bigint> {
+    return ethers.parseUnits('100000', 18);
+  }
+
+  async maxSupply(): Promise<bigint> {
+    return ethers.parseUnits('1000000', 18);
+  }
+
+  async balanceOf(): Promise<bigint> {
+    return ethers.parseUnits('1000', 18);
+  }
+
+  async allowance(): Promise<bigint> {
+    return ethers.parseUnits('0', 18);
+  }
+
+  async approve(): Promise<any> {
+    return { wait: async () => {} };
+  }
+}
+
+// Mock bonding curve contract implementation
+class MockBondingCurveContract {
+  async getCurrentPrice(): Promise<bigint> {
+    return ethers.parseEther('0.001');
+  }
+
+  async getMarketCap(): Promise<bigint> {
+    return ethers.parseEther('100');
+  }
+
+  async getFullyDilutedValuation(): Promise<bigint> {
+    return ethers.parseEther('1000');
+  }
+
+  async getReserveBalance(): Promise<bigint> {
+    return ethers.parseEther('50');
+  }
+
+  async calculateBuyReturn(weiAmount: bigint): Promise<bigint> {
+    // Simple linear calculation for simulation
+    return weiAmount * BigInt(1000);
+  }
+
+  async calculateSellReturn(tokenAmount: bigint): Promise<bigint> {
+    // Simple linear calculation for simulation
+    return tokenAmount / BigInt(1000);
+  }
+
+  async buy(): Promise<any> {
+    return { wait: async () => {} };
+  }
+
+  async sell(): Promise<any> {
+    return { wait: async () => {} };
+  }
+
+  get target(): string {
+    return '0xMockBondingCurve00000000000000000001';
+  }
+}
 
 export const initWeb3 = async (): Promise<boolean> => {
   try {
     if (typeof window === 'undefined' || !window.ethereum) {
-      console.error('No ethereum provider detected');
-      return false;
+      console.log('No ethereum provider detected, using mock provider for simulation');
+      
+      // Create mock provider and signer
+      isMockProvider = true;
+      
+      // We don't create an actual BrowserProvider, but we set up our mock contracts
+      loreTokenContract = new MockTokenContract() as unknown as ethers.Contract;
+      bondingCurveContract = new MockBondingCurveContract() as unknown as ethers.Contract;
+      signer = new MockSigner() as unknown as ethers.Signer;
+      
+      return true;
     }
 
     provider = new ethers.BrowserProvider(window.ethereum);
+    isMockProvider = false;
     
     // Request account access
     const accounts = await provider.send('eth_requestAccounts', []);
@@ -101,7 +216,7 @@ export const initWeb3 = async (): Promise<boolean> => {
 
 // Set up event listeners for account and chain changes
 const setupEventListeners = () => {
-  if (typeof window === 'undefined' || !window.ethereum) {
+  if (typeof window === 'undefined' || !window.ethereum || isMockProvider) {
     return;
   }
   
@@ -125,17 +240,8 @@ const setupEventListeners = () => {
     chainChangeCallbacks.forEach(callback => callback(chainId));
   };
   
-  // Remove existing listeners before adding new ones
-  try {
-    window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-    window.ethereum.removeListener('chainChanged', handleChainChanged);
-  } catch (error) {
-    console.log('No previous listeners to remove');
-  }
   
-  // Add listeners
-  window.ethereum.on('accountsChanged', handleAccountsChanged);
-  window.ethereum.on('chainChanged', handleChainChanged);
+
 };
 
 export const getTokenContract = () => {
@@ -153,6 +259,9 @@ export const getBondingCurveContract = () => {
 };
 
 export const getProvider = () => {
+  if (isMockProvider) {
+    return new MockProvider() as unknown as ethers.BrowserProvider;
+  }
   if (!provider) {
     throw new Error('Provider not initialized');
   }
@@ -174,6 +283,9 @@ export const getAccount = async (): Promise<string> => {
 };
 
 export const getChainId = async (): Promise<string> => {
+  if (isMockProvider) {
+    return '1'; // Mock mainnet
+  }
   if (!provider) {
     throw new Error('Provider not initialized');
   }
@@ -194,15 +306,16 @@ export const disconnectWeb3 = () => {
   signer = null;
   loreTokenContract = null;
   bondingCurveContract = null;
+  isMockProvider = false;
   
   // Clear callbacks
   accountChangeCallbacks = [];
   chainChangeCallbacks = [];
 };
 
+export const isSimulationMode = () => {
+  return isMockProvider;
+};
+
 // Add global type for window.ethereum
-declare global {
-  interface Window {
-    ethereum?: EthereumProvider;
-  }
-}
+

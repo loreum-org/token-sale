@@ -65,6 +65,19 @@ interface IBondingCurve {
     event ERC20Recovered(address indexed token, address indexed to, uint256 amount);
 
     /**
+    * @dev Emitted when the curve parameters are updated
+    * @param newExponent The new exponent value for the curve
+    * @param newReserveRatio The new reserve ratio in ppm
+    */
+    event CurveParametersUpdated(uint256 newExponent, uint256 newReserveRatio);
+
+    /**
+    * @dev Emitted when the reserve ratio is updated
+    * @param newRatio The new reserve ratio in ppm
+    */
+    event ReserveRatioUpdated(uint256 newRatio);
+
+    /**
      * @dev Allows a user to buy tokens with ETH
      * @param minReturn Minimum amount of tokens to receive
      * @return Amount of tokens purchased

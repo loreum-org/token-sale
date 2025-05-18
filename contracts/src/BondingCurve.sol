@@ -22,8 +22,8 @@ contract BondingCurve is IBondingCurve, Ownable, ReentrancyGuard {
     IERC20 public immutable token;
     
     // Curve parameters
-    uint256 public immutable exponent;  // n in the polynomial formula x^n
-    uint256 public immutable reserveRatio; // Reserve ratio in ppm (parts per million)
+    uint256 public exponent;  // n in the polynomial formula x^n
+    uint256 public reserveRatio; // Reserve ratio in ppm (parts per million)
     
     // Constants
     uint256 private constant PPM = 1_000_000;  // Parts per million for precision
@@ -394,31 +394,33 @@ contract BondingCurve is IBondingCurve, Ownable, ReentrancyGuard {
     
     /**
      * @dev See {IBondingCurve-updateCurveParameters}
-     * Note: Since exponent and reserveRatio are immutable, this function can't 
-     * actually update them, but is implemented to satisfy the interface for testing.
+     * Updates the bonding curve parameters
+     * @param newExponent The new exponent value for the curve
+     * @param newReserveRatio The new reserve ratio in ppm
      */
     function updateCurveParameters(uint256 newExponent, uint256 newReserveRatio) external onlyOwner {
-        // In a real implementation, we would store these in non-immutable state variables
-        // For now, just validate the inputs but don't update (since we can't)
         require(newExponent > 0, "BondingCurve: exponent must be greater than 0");
         require(newReserveRatio > 0 && newReserveRatio <= PPM, "BondingCurve: invalid reserve ratio");
         
-        // Emit an event (but we don't actually update the values since they're immutable)
-        // This is just to make the function callable for testing
+        // Update the parameters
+        exponent = newExponent;
+        reserveRatio = newReserveRatio;
+        
+        emit CurveParametersUpdated(newExponent, newReserveRatio);
     }
     
     /**
      * @dev See {IBondingCurve-updateReserveRatio}
-     * Note: Since reserveRatio is immutable, this function can't 
-     * actually update it, but is implemented to satisfy the interface for testing.
+     * Updates the reserve ratio of the bonding curve
+     * @param newRatio The new reserve ratio in ppm
      */
     function updateReserveRatio(uint256 newRatio) external onlyOwner {
-        // In a real implementation, we would store this in a non-immutable state variable
-        // For now, just validate the input but don't update (since we can't)
         require(newRatio > 0 && newRatio <= PPM, "BondingCurve: invalid reserve ratio");
         
-        // Emit an event (but we don't actually update the value since it's immutable)
-        // This is just to make the function callable for testing
+        // Update the reserve ratio
+        reserveRatio = newRatio;
+        
+        emit ReserveRatioUpdated(newRatio);
     }
     
     /**

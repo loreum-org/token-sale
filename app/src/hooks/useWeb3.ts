@@ -2,7 +2,8 @@ import { useCallback } from 'react';
 import { useWeb3Context } from '../components/wallet/Web3Provider';
 import { 
   initWeb3, 
-  disconnectWeb3
+  disconnectWeb3,
+  isSimulationMode
 } from '../services/web3Service';
 
 export interface UseWeb3Return {
@@ -11,12 +12,13 @@ export interface UseWeb3Return {
   account: string | null;
   chainId: string | null;
   error: Error | null;
+  isSimulationMode: boolean;
   connect: () => Promise<boolean>;
   disconnect: () => void;
 }
 
 const useWeb3 = (): UseWeb3Return => {
-  const { initialized, isConnecting, error, account, chainId, retryConnection } = useWeb3Context();
+  const { initialized, isConnecting, error, account, chainId, isSimulation, retryConnection } = useWeb3Context();
 
   const connect = useCallback(async (): Promise<boolean> => {
     if (initialized) {
@@ -37,6 +39,7 @@ const useWeb3 = (): UseWeb3Return => {
     account,
     chainId,
     error,
+    isSimulationMode: isSimulation,
     connect,
     disconnect
   };

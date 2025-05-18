@@ -348,7 +348,7 @@ contract BondingCurveTest is Test {
         uint256 smallPriceImpact = priceAfterSmallBuy - initialPrice;
         
         // Reset for next test
-        vm.revertTo(vm.snapshot());
+        vm.revertToState(vm.snapshotState());
         
         // Add initial ETH again after snapshot revert
         vm.deal(address(this), 1 ether);
@@ -363,7 +363,7 @@ contract BondingCurveTest is Test {
         uint256 mediumPriceImpact = priceAfterMediumBuy - initialPrice;
         
         // Reset for next test
-        vm.revertTo(vm.snapshot());
+        vm.revertToState(vm.snapshotState());
         
         // Add initial ETH again after snapshot revert
         vm.deal(address(this), 1 ether);

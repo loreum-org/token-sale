@@ -140,7 +140,7 @@ contract BondingCurveMetricsTest is Test {
                     FULLY DILUTED VALUATION TESTS
     //////////////////////////////////////////////////////////////*/
     
-    function test_GetFullyDilutedValuation() public {
+    function test_GetFullyDilutedValuation() public view {
         // FDV = current price * max supply
         uint256 fdv = bondingCurve.getFullyDilutedValuation();
         assertGt(fdv, 0, "FDV should be greater than 0");
