@@ -14,17 +14,19 @@ const nextConfig = {
   },
   // Set output to standalone for Docker deployments
   output: 'standalone',
-  // Enable production source maps for better debugging
-  productionBrowserSourceMaps: true,
-  // Disable specific optimizations that might cause issues with native modules
+  
+  // Keep output tree minimized (moved from experimental)
+  outputFileTracingRoot: process.cwd(),
+  
+  // Completely disable specific optimizations that cause issues
   experimental: {
-    // Disable optimizeCss which uses lightningcss and can cause issues
+    // Disable optimizeCss completely
     optimizeCss: false,
-    // Keep output tree minimized
-    outputFileTracingRoot: process.cwd(),
   },
+  
   // Increase build timeout for Railway deployments
   staticPageGenerationTimeout: 180,
+  
   // Additional security headers
   headers: async () => {
     return [
@@ -47,13 +49,31 @@ const nextConfig = {
       },
     ];
   },
-  // Configure webpack to avoid issues with platform-specific modules
-  webpack: (config, { dev, isServer }) => {
-    // Handle platform-specific modules
-    config.externals = [...(config.externals || []), 'lightningcss', '@tailwindcss/oxide'];
+  
+  // Configure webpack to disable problematic modules
+  webpack: (config, { isServer }) => {
+    // Completely exclude problematic native modules
+    config.externals = [...(config.externals || [])];
+    
+    if (!isServer) {
+      // Replace native module with empty module in client builds
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'lightningcss': false,
+        '@tailwindcss/oxide': false
+      };
+    }
+    
+    // Disable minification to avoid issues with native modules
+    if (config.optimization && config.optimization.minimizer) {
+      config.optimization.minimizer = [];
+    }
     
     return config;
   },
+  
+  // Disable source maps in production to reduce build complexity
+  productionBrowserSourceMaps: false,
 };
 
 module.exports = nextConfig; 

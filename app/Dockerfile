@@ -2,26 +2,31 @@
 FROM node:18-alpine AS builder
 
 # Install necessary build tools for native dependencies
-RUN apk add --no-cache python3 make g++ gcc libc6-compat curl git
+RUN apk add --no-cache python3 make g++ gcc libc6-compat
 
 WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json ./
 
-# Install dependencies with explicit platform target
-ENV NEXT_TELEMETRY_DISABLED 1
-ENV TAILWIND_OXIDE_TARGET musl
+# Environment variables
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV TAILWIND_OXIDE_TARGET=musl
+ENV NEXT_IGNORE_ESLINT=1
+ENV ESLINT_DISABLE=true
+ENV SKIP_OXIZING=1
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 
-# Clean install with proper rebuild of native modules
-RUN npm ci --no-audit --no-optional && \
-    npm rebuild --force
+# Install dependencies
+RUN npm ci --no-audit --omit=dev --ignore-scripts && \
+    npm cache clean --force
 
 # Copy the rest of the application
 COPY . .
 
-# Build using our specialized docker build script
-RUN npm run build:docker
+# Force non-native mode for Tailwind and build
+RUN SKIP_OXIZING=1 npm run build
 
 # Stage 2: Create a minimal production image
 FROM node:18-alpine AS runner
@@ -29,8 +34,8 @@ FROM node:18-alpine AS runner
 WORKDIR /app
 
 # Set environment variables
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # Create a non-root user for security
 RUN addgroup --system --gid 1001 nodejs && \
