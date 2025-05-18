@@ -1,0 +1,32 @@
+# Dependency directories
+node_modules
+.pnp
+.pnp.js
+
+# Build artifacts
+.next
+out
+
+# Cache directories
+.npm
+.cache
+
+# Environment files
+.env
+.env.*
+.npmrc
+
+# Development files
+.git
+.github
+.eslintrc*
+.prettier*
+README.md
+*.log
+
+# OS and editor files
+.DS_Store
+.vscode
+.idea
+*.swp
+*.swo 
