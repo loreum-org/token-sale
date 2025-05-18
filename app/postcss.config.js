@@ -1,7 +1,8 @@
 // Load modules conditionally
 let plugins = {
-  tailwindcss: {
+  '@tailwindcss/postcss': {
     config: {
+      content: ['./src/**/*.{js,ts,jsx,tsx}'],
       future: {
         // Disable Oxide engine
         unstable_oxide: false,
