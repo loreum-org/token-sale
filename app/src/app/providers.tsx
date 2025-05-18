@@ -1,19 +1,19 @@
 "use client";
 
-import { WagmiProvider, createConfig, http, createStorage } from "wagmi";
+import { WagmiProvider, createConfig, http } from "wagmi";
 import { sepolia, mainnet } from "wagmi/chains";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConnectKitProvider, getDefaultConfig } from "connectkit";
 import { ReactNode } from "react";
 
-// Configure chains
-const chains = [sepolia, mainnet];
+// Configure chains - explicitly specify as const to satisfy type requirements
+const chains = [sepolia, mainnet] as const;
 
 // Create wagmi config
 const config = createConfig(
   getDefaultConfig({
     appName: "LORE Token Simulator",
-    alchemyId: process.env.NEXT_PUBLIC_ALCHEMY_ID || "",
+    // alchemyId: process.env.NEXT_PUBLIC_ALCHEMY_ID || "",
     walletConnectProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "",
     chains,
     transports: {

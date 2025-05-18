@@ -2,8 +2,7 @@ import { useCallback } from 'react';
 import { useWeb3Context } from '../components/wallet/Web3Provider';
 import { 
   initWeb3, 
-  disconnectWeb3,
-  isSimulationMode
+  disconnectWeb3
 } from '../services/web3Service';
 
 export interface UseWeb3Return {

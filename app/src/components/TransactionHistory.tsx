@@ -1,7 +1,7 @@
 "use client";
 
 import { Transaction } from "@/types";
-import { formatDate, formatEth, formatNumber, truncateAddress } from "@/lib/utils";
+import { formatEth, formatNumber, truncateAddress } from "@/lib/utils";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 

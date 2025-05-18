@@ -1,25 +1,12 @@
 "use client";
 
 import { ConnectKitButton } from "connectkit";
-import { useAccount } from "wagmi";
-import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 
 export function WalletConnect() {
-  const { address, isConnected } = useAccount();
-  const [shortAddress, setShortAddress] = useState<string>("");
-
-  useEffect(() => {
-    if (address) {
-      // Format address to show only first 6 and last 4 characters
-      setShortAddress(`${address.substring(0, 6)}...${address.substring(address.length - 4)}`);
-    }
-  }, [address]);
-
   return (
     <div className="flex justify-end mb-4">
       <ConnectKitButton.Custom>
-        {({ isConnected, show, address, truncatedAddress }) => {
+        {({ isConnected, show, truncatedAddress }) => {
           return (
             <button
               onClick={show}

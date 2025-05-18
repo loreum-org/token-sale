@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatEth, formatNumber } from "@/lib/utils";
+import { formatEth } from "@/lib/utils";
 
 interface TradingPanelProps {
   state: CurveState | null;

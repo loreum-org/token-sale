@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { bondingCurveApi } from "@/lib/api-client";
 import { CurveState, Transaction } from "@/types";
 import { useAccount } from "wagmi";
+import { calculateBuyAmount, calculateSellAmount, buyTokens, sellTokens } from "../services/tokenService";
 
 /**
  * Custom hook for interacting with the bonding curve
@@ -204,3 +205,94 @@ export function useBondingCurve() {
     calculatePrice,
   };
 }
+
+/**
+ * Legacy compatibility interface for forms
+ */
+const useBondingCurveWithForms = () => {
+  const [buyAmount, setBuyAmount] = useState<string>('0');
+  const [sellAmount, setSellAmount] = useState<string>('0');
+  const [buyLoading, setBuyLoading] = useState<boolean>(false);
+  const [sellLoading, setSellLoading] = useState<boolean>(false);
+  const [buyError, setBuyError] = useState<Error | null>(null);
+  const [sellError, setSellError] = useState<Error | null>(null);
+  const [transactionPending, setTransactionPending] = useState<boolean>(false);
+  
+  const calculateBuy = useCallback(async (ethAmount: string) => {
+    if (!ethAmount || parseFloat(ethAmount) <= 0) {
+      setBuyAmount('0');
+      return;
+    }
+    
+    setBuyLoading(true);
+    setBuyError(null);
+    
+    try {
+      const result = await calculateBuyAmount(ethAmount);
+      setBuyAmount(result);
+    } catch (error) {
+      console.error('Error calculating buy amount:', error);
+      setBuyError(error instanceof Error ? error : new Error('Failed to calculate buy amount'));
+      setBuyAmount('0');
+    } finally {
+      setBuyLoading(false);
+    }
+  }, []);
+  
+  const calculateSell = useCallback(async (tokenAmount: string) => {
+    if (!tokenAmount || parseFloat(tokenAmount) <= 0) {
+      setSellAmount('0');
+      return;
+    }
+    
+    setSellLoading(true);
+    setSellError(null);
+    
+    try {
+      const result = await calculateSellAmount(tokenAmount);
+      setSellAmount(result);
+    } catch (error) {
+      console.error('Error calculating sell amount:', error);
+      setSellError(error instanceof Error ? error : new Error('Failed to calculate sell amount'));
+      setSellAmount('0');
+    } finally {
+      setSellLoading(false);
+    }
+  }, []);
+  
+  const executeBuy = useCallback(async (ethAmount: string, slippagePercentage: number) => {
+    try {
+      return await buyTokens(ethAmount, slippagePercentage / 100);
+    } catch (error) {
+      console.error('Error executing buy:', error);
+      throw error;
+    }
+  }, []);
+  
+  const executeSell = useCallback(async (tokenAmount: string, slippagePercentage: number) => {
+    try {
+      return await sellTokens(tokenAmount, slippagePercentage / 100);
+    } catch (error) {
+      console.error('Error executing sell:', error);
+      throw error;
+    }
+  }, []);
+  
+  return {
+    buyAmount,
+    sellAmount,
+    buyLoading,
+    sellLoading,
+    buyError,
+    sellError,
+    calculateBuy,
+    calculateSell,
+    executeBuy,
+    executeSell,
+    transactionPending,
+    setTransactionPending,
+  };
+};
+
+// Default export for backward compatibility
+export default useBondingCurveWithForms;

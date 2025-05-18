@@ -116,9 +116,9 @@ export const calculateBuyAmount = async (ethAmount: string): Promise<string> => 
     try {
       // First try the direct calculation
       tokenAmount = await bondingCurveContract.calculateBuyReturn(weiAmount);
-    } catch (error: any) {
+    } catch (error: unknown) {
       // If overflow occurred, use a chunked approach
-      if (error.reason && error.reason.includes('OVERFLOW')) {
+      if (error && typeof error === 'object' && 'reason' in error && typeof error.reason === 'string' && error.reason.includes('OVERFLOW')) {
         console.log('Using chunked calculation to avoid overflow');
         
         // Break the calculation into smaller chunks (0.1 ETH each)
@@ -245,7 +245,7 @@ export const getTransactionHistory = async (): Promise<TransactionData[]> => {
     const rawHistory = await bondingCurveContract.getTransactionHistory(account);
     
     // Format transaction data
-    return rawHistory.map((transaction: any) => ({
+    return rawHistory.map((transaction: { timestamp: bigint; isBuy: boolean; tokenAmount: bigint; ethAmount: bigint; price: bigint }) => ({
       timestamp: Number(transaction.timestamp),
       isBuy: transaction.isBuy,
       tokenAmount: ethers.formatUnits(transaction.tokenAmount, decimals),

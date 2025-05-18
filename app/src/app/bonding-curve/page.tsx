@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
 import { ErrorBoundary, ErrorMessage } from "@/components/ErrorBoundary";
-import { LoadingOverlay } from "@/components/LoadingSpinner";
 import { BondingCurveChart } from "@/components/BondingCurveChart";
 import { WalletCard } from "@/components/WalletCard";
 import { ContractStats } from "@/components/ContractStats";
@@ -11,6 +9,7 @@ import { TradingPanel } from "@/components/TradingPanel";
 import { WalletConnect } from "@/components/WalletConnect";
 import { useBondingCurve } from "@/hooks/useBondingCurve";
 import { useAccount } from "wagmi";
+import Image from 'next/image';
 
 export default function BondingCurvePage() {
   // Get data from our custom hook
@@ -44,10 +43,12 @@ export default function BondingCurvePage() {
       <div className="container mx-auto py-8 bg-gray-950 text-gray-100 min-h-screen px-4">
         {/* Header with Logo and Wallet Connect */}
         <div className="flex items-center justify-between mb-6">
-          <img 
+          <Image 
             src="https://cdn.loreum.org/logos/white.svg" 
             alt="Loreum Logo" 
             className="h-12 w-auto"
+            width={120}
+            height={48}
           />
           <WalletConnect />
         </div>

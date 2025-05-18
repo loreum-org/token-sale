@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { isValidNumber, formatNumber, calculatePriceImpact } from '../../utils/calculations';
-import useBondingCurve from '../../hooks/useBondingCurve';
+import { useBondingCurve } from '../../hooks/useBondingCurve';
 import useWeb3 from '../../hooks/useWeb3';
 
 interface BuyFormProps {
